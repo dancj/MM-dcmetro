@@ -80,6 +80,12 @@ Module.register("dcmetro",{
             return wrapper;
         }
 
+        if (!this.authorized) {
+            wrapper.innerHTML = this.translate("CONFIGURE API KEY");
+            wrapper.className = "dimmed light small";
+            return wrapper;
+        }
+
         var table = document.createElement("table");
         table.className = "small";
 
@@ -100,7 +106,7 @@ Module.register("dcmetro",{
             row.appendChild(departureTimeCell);
 
             var MinutesAwayCell = document.createElement("td");
-            MinutesAwayCell.innerHTML = "-" + train.Min + " min";
+            MinutesAwayCell.innerHTML = " " + train.Min + " min";
             MinutesAwayCell.className = "align-right trainto";
             row.appendChild(MinutesAwayCell);
 
@@ -115,7 +121,6 @@ Module.register("dcmetro",{
                     row.style.opacity = 1 - (1 / steps * currentStep);
                 }
             }
-
         }
 
         return table;
@@ -142,19 +147,22 @@ Module.register("dcmetro",{
 		var self = this;
 		var retry = true;
 
+        self.authorized = true;
+
         var xhr = new XMLHttpRequest();
         xhr.timeout = 2000;
         xhr.onreadystatechange = function(e){
-            console.log("readyState = " + xhr.readyState);
+            //console.log("readyState = " + xhr.readyState);
             if (xhr.readyState === 4){
                 if (xhr.status === 200){
                     //console.log(xhr.response);
                     self.processTrains(JSON.parse(xhr.response));
-                } else if (xhr.status === 401) {
+                } else if (xhr.status === 401) { //unauthorized
                     self.updateDom(self.config.animationSpeed);
 
-                    Log.error(self.name + ": Incorrect APPID.");
+                    Log.error(self.name + ": Incorrect API Key.");
                     retry = true;
+                    self.authorized = false;
                 } else {
                     console.error("XHR failed: ", xhr.status);
                 }

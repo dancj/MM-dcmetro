@@ -16,7 +16,7 @@ modules: [
             // demo API key: 6b700f7ea9db408e9745c207da7ca827 (get your own for Production applications)
             apiKey: '6b700f7ea9db408e9745c207da7ca827',
             myStationCode: 'A01'
-        } 		
+        }
 	}
 ]
 ````
