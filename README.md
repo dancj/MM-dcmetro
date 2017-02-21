@@ -11,11 +11,12 @@ modules: [
 		module: 'dcmetro',
 		position: 'top_right',	// This can be any of the regions.
 									// Best results in left or right regions.
-		config: {
-			// See 'Configuration options' for more information.
-			myLocationID: 'A01',
-			appid: 'abcde12345abcde12345abcde12345ab' //developer.wmata.com API key.
-		}
+
+        config: {
+            // demo API key: 6b700f7ea9db408e9745c207da7ca827 (get your own for Production applications)
+            apiKey: '6b700f7ea9db408e9745c207da7ca827',
+            myStationCode: 'A01'
+        } 		
 	}
 ]
 ````
@@ -95,18 +96,6 @@ The following properties can be configured:
 			<td>The delay before retrying after a request failure. (Milliseconds)<br>
 				<br><b>Possible values:</b> <code>1000</code> - <code>60000</code>
 				<br><b>Default value:</b>  <code>2500</code>
-			</td>
-		</tr>
-		<tr>
-			<td><code>apiVersion</code></td>
-			<td>The OpenWeatherMap API version to use.<br>
-				<br><b>Default value:</b>  <code>2.5</code>
-			</td>
-		</tr>
-		<tr>
-			<td><code>apiBase</code></td>
-			<td>The OpenWeatherMap base URL.<br>
-				<br><b>Default value:</b>  <code>'http://api.openweathermap.org/data/'</code>
 			</td>
 		</tr>
 	</tbody>
