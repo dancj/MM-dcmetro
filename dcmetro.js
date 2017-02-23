@@ -27,15 +27,14 @@ Module.register("dcmetro",{
         appendLocationNameToHeader: true,
         
         lineColors: {
-        	"RD": "Red",
-        	"BL": "Blue",
-        	"YL": "Yellow",
-        	"OR": "Orange",
-        	"GR": "Green",
-        	"SV": "Silver",
-        	"No": "No Passengers",
-        	"": "No Passengers"
-        }
+        	"RD": "#FF0000",
+        	"BL": "#00FF00",
+        	"YL": "#FFFF00",
+        	"OR": "#FFA500",
+        	"GR": "#0000FF",
+        	"SV": "#C0C0C0"
+        },
+        defaultColor: "#FFFFFF"
 
     },
 
@@ -86,6 +85,11 @@ Module.register("dcmetro",{
             return wrapper;
         }
 
+        if (this.trains.length == 0) {
+            wrapper.innerHTML = this.translate("NO TRAINS");
+            wrapper.className = "dimmed light small";
+        }
+
         var table = document.createElement("table");
         table.className = "small";
 
@@ -96,18 +100,19 @@ Module.register("dcmetro",{
             table.appendChild(row);
 
             var trainDestCell = document.createElement("td");
-            trainDestCell.className = "from";
+            trainDestCell.className = "destination";
             trainDestCell.innerHTML = train.DestinationName;
             row.appendChild(trainDestCell);
 
+            var blockColor = this.config.lineColors[train.Line] || this.config.defaultColor;
             var departureTimeCell = document.createElement("td");
-            departureTimeCell.className = "departuretime";
-            departureTimeCell.innerHTML = "(" + train.Line + ")";
+            departureTimeCell.className = "lineColor";
+            departureTimeCell.innerHTML = "<p style='background:" + blockColor + "'></p>";
             row.appendChild(departureTimeCell);
 
             var MinutesAwayCell = document.createElement("td");
             MinutesAwayCell.innerHTML = " " + train.Min + " min";
-            MinutesAwayCell.className = "align-right trainto";
+            MinutesAwayCell.className = "align-right minutes";
             row.appendChild(MinutesAwayCell);
 
             if (this.config.fade && this.config.fadePoint < 1) {
@@ -150,7 +155,7 @@ Module.register("dcmetro",{
         self.authorized = true;
 
         var xhr = new XMLHttpRequest();
-        xhr.timeout = 2000;
+        xhr.timeout = 10000;
         xhr.onreadystatechange = function(e){
             //console.log("readyState = " + xhr.readyState);
             if (xhr.readyState === 4){
