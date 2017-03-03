@@ -26,14 +26,14 @@ Module.register("dcmetro",{
         StationInfoEndpoint: "Rail.svc/json/jStationInfo",
 
         appendLocationNameToHeader: true,
-        
+
         lineColors: {
-        	"RD": "#FF0000",
-        	"BL": "#0000FF",
-        	"YL": "#FFFF00",
-        	"OR": "#FFA500",
-        	"GR": "#006400",
-        	"SV": "#C0C0C0"
+            "RD": "#FF0000",
+            "BL": "#0000FF",
+            "YL": "#FFFF00",
+            "OR": "#FFA500",
+            "GR": "#006400",
+            "SV": "#C0C0C0"
         },
         defaultColor: "#000000"
 
@@ -191,11 +191,11 @@ Module.register("dcmetro",{
      */
     updateTrains: function() {
         Log.log("[dcmetro] updateTrains");
-		// 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
+        // 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
 
-		var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + "/" + this.config.myStationCode + this.getQuerystring();
-		var self = this;
-		var retry = true;
+        var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + "/" + this.config.myStationCode + this.getQuerystring();
+        var self = this;
+        var retry = true;
 
         self.authorized = true;
 
@@ -230,29 +230,29 @@ Module.register("dcmetro",{
         xhr.send();
 
     },
-    
+
     /* processTrains(data)
-	 * Uses the received data to set the various values.
-	 *
-	 * argument data object - Train information received form WMATA
-	 */
-	processTrains: function(data) {
+     * Uses the received data to set the various values.
+     *
+     * argument data object - Train information received form WMATA
+     */
+    processTrains: function(data) {
 //		Log.log("[dcmetro] processTrains");
 
-		if (!data && !data.Trains) {
-			console.log("processTrains: Did not receive usable new data.");
-			return;
-		}
+        if (!data && !data.Trains) {
+            console.log("processTrains: Did not receive usable new data.");
+            return;
+        }
 
-		this.trains = [];
-		for (var i=0; i < data.Trains.length; i++) {
-			this.trains.push(data.Trains[i]);
-		}
+        this.trains = [];
+        for (var i=0; i < data.Trains.length; i++) {
+            this.trains.push(data.Trains[i]);
+        }
 
         this.show(this.config.animationSpeed, {lockString:this.identifier});
         this.loaded = true;
         this.updateDom(this.config.animationSpeed);
-	},
+    },
 
     processStation: function (data) {
         if (!data) {
@@ -272,7 +272,7 @@ Module.register("dcmetro",{
             }
         }
     },
-    
+
     /* getQuerystring(compliments)
      * Generates an url with api parameters based on the config.
      *

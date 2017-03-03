@@ -40,7 +40,7 @@ The following properties can be configured:
 			<td>The location ID used for upcoming metro times.<br>
 				<br><b>Example:</b> <code>'A01'</code>
 				<br><b>Default value:</b> <code>false</code><br><br>
-				<strong>Note: See WMATA documentation for list of stations IDs</strong> 
+				<strong>Note: See WMATA documentation for list of stations IDs</strong>
 			</td>
 		</tr>
 		<tr>
