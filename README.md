@@ -47,8 +47,8 @@ The following properties can be configured:
 		</tr>
 		<tr>
 			<td><code>apiKey</code></td>
-			<td>Demo key available here: https://developer.wmata.com/demokey</td>
 			<td>The <a href="https://developer.wmata.com" target="_blank">WMATA</a> API key<br>
+			<p>Demo key available here: https://developer.wmata.com/demokey</p>
 				<br> This value is <b>REQUIRED</b>
 			</td>
 		</tr>
