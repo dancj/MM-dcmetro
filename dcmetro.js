@@ -14,12 +14,11 @@ Module.register("dcmetro",{
     defaults: {
         location: false,
         locationID: false,
-        stationName: "",
         fade: true,
         fadePoint: 0.7,
 
         initialLoadDelay: 2500, // 2.5 seconds delay.
-        updateInterval: 1 * 60 * 1000, // every 2 minutes
+        updateInterval: 1 * 60 * 1000, // every X minutes
         retryDelay: 2500,
 
         apiBase: "https://api.wmata.com",
@@ -66,6 +65,7 @@ Module.register("dcmetro",{
         moment.locale(config.language);
 
         this.trains = [];
+        this.getStationInfo();
 
         this.loaded = false;
         this.scheduleUpdate(this.config.initialLoadDelay);
@@ -73,6 +73,7 @@ Module.register("dcmetro",{
 
     // Override dom generator.
     getDom: function() {
+        var self = this;
         var wrapper = document.createElement("div");
 
         if (!this.loaded) {
@@ -95,6 +96,11 @@ Module.register("dcmetro",{
         var table = document.createElement("table");
         table.className = "small";
 
+        var updateTimeRow = document.createElement("tr");
+        updateTimeRow.className = "update-time";
+        updateTimeRow.innerHTML = "<td>Last Update: " + new Date().toLocaleTimeString() + "</td>";
+        table.appendChild(updateTimeRow);
+
         for (var t in this.trains) {
             var train = this.trains[t];
 
@@ -113,7 +119,7 @@ Module.register("dcmetro",{
             row.appendChild(departureTimeCell);
 
             var MinutesAwayCell = document.createElement("td");
-            MinutesAwayCell.innerHTML = " " + train.Min + " min";
+            MinutesAwayCell.innerHTML = " " + train.Min + (self.isNumeric(train.Min) ? " min" : "");
             MinutesAwayCell.className = "align-right minutes";
             row.appendChild(MinutesAwayCell);
 
@@ -136,7 +142,7 @@ Module.register("dcmetro",{
     // Override getHeader method.
     getHeader: function() {
         if (this.config.appendLocationNameToHeader) {
-            return this.data.header + " " + this.config.stationName;
+            return this.stationName || this.data.header;
         }
 
         return this.data.header;
@@ -210,6 +216,10 @@ Module.register("dcmetro",{
                 } else {
                     console.error("XHR failed: ", xhr.status);
                 }
+
+                if (retry) {
+                    self.scheduleUpdate((self.loaded) ? -1 : self.config.retryDelay);
+                }
             }
         };
         xhr.ontimeout = function (){
@@ -227,13 +237,14 @@ Module.register("dcmetro",{
 	 * argument data object - Train information received form WMATA
 	 */
 	processTrains: function(data) {
-		Log.log("[dcmetro] processTrains");
+//		Log.log("[dcmetro] processTrains");
 
 		if (!data && !data.Trains) {
 			console.log("processTrains: Did not receive usable new data.");
 			return;
 		}
-		
+
+		this.trains = [];
 		for (var i=0; i < data.Trains.length; i++) {
 			this.trains.push(data.Trains[i]);
 		}
@@ -244,14 +255,13 @@ Module.register("dcmetro",{
 	},
 
     processStation: function (data) {
-        Log.log("[dcmetro] processStation");
         if (!data) {
             console.log("processStation: Did not receive usable new data.");
             return;
         }
 
         this.stationName = data.Name;
-        this.updateDom(this.config.animationSpeed);
+        Log.log("[dcmetro] processStation set to: " + this.stationName);
     },
 
     // Override notification handler.
@@ -294,8 +304,11 @@ Module.register("dcmetro",{
         var self = this;
         clearTimeout(this.updateTimer);
         this.updateTimer = setTimeout(function() {
-            self.getStationInfo();
             self.updateTrains();
         }, nextLoad);
+    },
+
+    isNumeric: function (n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
     }
 });

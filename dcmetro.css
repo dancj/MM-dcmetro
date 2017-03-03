@@ -12,3 +12,18 @@
     font-size: 9pt;
 }
 
+.update-time {
+    font-size: 9pt;
+    color:gray;
+    text-align: center;
+}
+.update-time td {
+    padding: 0;
+    position: absolute;
+    right:0;
+    top:0;
+}
+
+.header {
+    font-size: 18pt;
+}
