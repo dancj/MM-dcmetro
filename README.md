@@ -39,12 +39,14 @@ The following properties can be configured:
 			<td><code>myLocationID</code></td>
 			<td>The location ID used for upcoming metro times.<br>
 				<br><b>Example:</b> <code>'A01'</code>
-				<br><b>Default value:</b> <code>false</code><br><br>
-				<strong>Note: See WMATA documentation for list of stations IDs</strong>
+
+				Demo key available here: https://developer.wmata.com/demokey
+
+				<strong>Note: See WMATA documentation for list of stations IDs, or Station List below</strong>
 			</td>
 		</tr>
 		<tr>
-			<td><code>appid</code></td>
+			<td><code>apiKey</code></td>
 			<td>The <a href="https://developer.wmata.com" target="_blank">WMATA</a> API key<br>
 				<br> This value is <b>REQUIRED</b>
 			</td>
@@ -53,7 +55,7 @@ The following properties can be configured:
 			<td><code>updateInterval</code></td>
 			<td>How often does the content needs to be fetched? (Milliseconds)<br>
 				<br><b>Possible values:</b> <code>1000</code> - <code>86400000</code>
-				<br><b>Default value:</b> <code>600000</code> (10 minutes)
+				<br><b>Default value:</b> <code>60000</code> (1 minute)
 			</td>
 		</tr>
 		<tr>
@@ -61,13 +63,6 @@ The following properties can be configured:
 			<td>Speed of the update animation. (Milliseconds)<br>
 				<br><b>Possible values:</b><code>0</code> - <code>5000</code>
 				<br><b>Default value:</b> <code>1000</code> (1 second)
-			</td>
-		</tr>
-		<tr>
-			<td><code>lang</code></td>
-			<td>The language of the days.<br>
-				<br><b>Possible values:</b> <code>en</code>, <code>nl</code>, <code>ru</code>, etc ...
-				<br><b>Default value:</b> uses value of <i>config.language</i>
 			</td>
 		</tr>
 		<tr>
@@ -81,7 +76,7 @@ The following properties can be configured:
 			<td><code>fadePoint</code></td>
 			<td>Where to start fade?<br>
 				<br><b>Possible values:</b> <code>0</code> (top of the list) - <code>1</code> (bottom of list)
-				<br><b>Default value:</b> <code>0.25</code>
+				<br><b>Default value:</b> <code>0.5</code>
 			</td>
 		</tr>
 		<tr>

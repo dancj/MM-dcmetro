@@ -15,7 +15,7 @@ Module.register("dcmetro",{
         location: false,
         locationID: false,
         fade: true,
-        fadePoint: 0.7,
+        fadePoint: 0.5,
 
         initialLoadDelay: 2500, // 2.5 seconds delay.
         updateInterval: 1 * 60 * 1000, // every X minutes
