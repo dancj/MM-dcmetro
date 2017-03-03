@@ -40,13 +40,14 @@ The following properties can be configured:
 			<td>The location ID used for upcoming metro times.<br>
 				<br><b>Example:</b> <code>'A01'</code>
 
-				Demo key available here: https://developer.wmata.com/demokey
+				<br/>
 
 				<strong>Note: See WMATA documentation for list of stations IDs, or Station List below</strong>
 			</td>
 		</tr>
 		<tr>
 			<td><code>apiKey</code></td>
+			<td>Demo key available here: https://developer.wmata.com/demokey</td>
 			<td>The <a href="https://developer.wmata.com" target="_blank">WMATA</a> API key<br>
 				<br> This value is <b>REQUIRED</b>
 			</td>
