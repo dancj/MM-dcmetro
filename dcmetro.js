@@ -4,6 +4,7 @@
  * Module: DC Metro
  *
  * By Dan T.
+ * based on a Script from Michael Teeuw http://michaelteeuw.nl
  * MIT Licensed.
  */
 
@@ -13,23 +14,31 @@ Module.register("dcmetro",{
     defaults: {
         location: false,
         locationID: false,
-        appid: "",
+        stationName: "",
         fade: true,
-        fadePoint: 0.25, // Start on 1/4th of the list.
+        fadePoint: 0.7,
 
         initialLoadDelay: 2500, // 2.5 seconds delay.
+        updateInterval: 1 * 60 * 1000, // every 2 minutes
         retryDelay: 2500,
 
-        apiVersion: "2.5",
-        apiBase: "http://api.openweathermap.org/data/",
-        forecastEndpoint: "forecast/daily",
+        apiBase: "https://api.wmata.com",
+        TrainPredictionEndpoint: "StationPrediction.svc/json/GetPrediction",
+        StationInfoEndpoint: "Rail.svc/json/jStationInfo",
 
-        appendLocationNameToHeader: true
+        appendLocationNameToHeader: true,
+        
+        lineColors: {
+        	"RD": "#FF0000",
+        	"BL": "#0000FF",
+        	"YL": "#FFFF00",
+        	"OR": "#FFA500",
+        	"GR": "#006400",
+        	"SV": "#C0C0C0"
+        },
+        defaultColor: "#000000"
 
     },
-
-    // create a variable for the first upcoming calendaar event. Used if no location is specified.
-    firstEvent: false,
 
     // create a variable to hold the location name based on the API result.
     fetchedLocatioName: "",
@@ -41,7 +50,7 @@ Module.register("dcmetro",{
 
     // Define required scripts.
     getStyles: function() {
-        return ["dcmetro.css"];
+        return ["dcmetro.css", "font-awesome.css"];
     },
 
     // Define required translations.
@@ -56,22 +65,15 @@ Module.register("dcmetro",{
         // Set locale.
         moment.locale(config.language);
 
+        this.trains = [];
+
         this.loaded = false;
         this.scheduleUpdate(this.config.initialLoadDelay);
-
-        this.updateTimer = null;
-
     },
 
     // Override dom generator.
     getDom: function() {
         var wrapper = document.createElement("div");
-
-        if (this.config.appid === "") {
-            wrapper.innerHTML = "Please set the correct WMATA <i>appid</i> in the config for module: " + this.name + ".";
-            wrapper.className = "dimmed light small";
-            return wrapper;
-        }
 
         if (!this.loaded) {
             wrapper.innerHTML = this.translate("LOADING");
@@ -79,10 +81,54 @@ Module.register("dcmetro",{
             return wrapper;
         }
 
+        if (!this.authorized) {
+            wrapper.innerHTML = this.translate("CONFIGURE API KEY");
+            wrapper.className = "dimmed light small";
+            return wrapper;
+        }
+
+        if (this.trains.length == 0) {
+            wrapper.innerHTML = this.translate("NO TRAINS");
+            wrapper.className = "dimmed light small";
+        }
+
         var table = document.createElement("table");
         table.className = "small";
 
-        // TODO: build display
+        for (var t in this.trains) {
+            var train = this.trains[t];
+
+            var row = document.createElement("tr");
+            table.appendChild(row);
+
+            var trainDestCell = document.createElement("td");
+            trainDestCell.className = "destination";
+            trainDestCell.innerHTML = train.DestinationName;
+            row.appendChild(trainDestCell);
+
+            var blockColor = this.config.lineColors[train.Line] || this.config.defaultColor;
+            var departureTimeCell = document.createElement("td");
+            departureTimeCell.className = "lineColor";
+            departureTimeCell.innerHTML = "<p style='background:" + blockColor + "'>" + train.Line   + "</p>";
+            row.appendChild(departureTimeCell);
+
+            var MinutesAwayCell = document.createElement("td");
+            MinutesAwayCell.innerHTML = " " + train.Min + " min";
+            MinutesAwayCell.className = "align-right minutes";
+            row.appendChild(MinutesAwayCell);
+
+            if (this.config.fade && this.config.fadePoint < 1) {
+                if (this.config.fadePoint < 0) {
+                    this.config.fadePoint = 0;
+                }
+                var startingPoint = this.trains.length * this.config.fadePoint;
+                var steps = this.trains.length - startingPoint;
+                if (t >= startingPoint) {
+                    var currentStep = t - startingPoint;
+                    row.style.opacity = 1 - (1 / steps * currentStep);
+                }
+            }
+        }
 
         return table;
     },
@@ -90,10 +136,122 @@ Module.register("dcmetro",{
     // Override getHeader method.
     getHeader: function() {
         if (this.config.appendLocationNameToHeader) {
-            return this.data.header + " " + this.fetchedLocatioName;
+            return this.data.header + " " + this.config.stationName;
         }
 
         return this.data.header;
+    },
+
+    getStationInfo: function () {
+        Log.log("[dcmetro] getStationInfo");
+        // https://api.wmata.com/Rail.svc/json/jStationInfo[?StationCode]
+
+        var url = this.config.apiBase + "/" + this.config.StationInfoEndpoint + this.getQuerystring() + "&StationCode=" + this.config.myStationCode;
+        var self = this;
+        var retry = true;
+
+        self.authorized = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 10000;
+        xhr.onreadystatechange = function(e){
+            //console.log("readyState = " + xhr.readyState);
+            if (xhr.readyState === 4){
+                if (xhr.status === 200){
+                    //console.log(xhr.response);
+                    self.processStation(JSON.parse(xhr.response));
+                } else if (xhr.status === 401) { //unauthorized
+                    self.updateDom(self.config.animationSpeed);
+
+                    Log.error(self.name + ": Incorrect API Key.");
+                    retry = true;
+                    self.authorized = false;
+                } else {
+                    console.error("XHR failed: ", xhr.status);
+                }
+            }
+        };
+        xhr.ontimeout = function (){
+            console.error("request timedout: ", xhr);
+        };
+        xhr.open("get", url, /*async*/ true);
+        // xhr.responseType = "text";
+        xhr.send();
+    },
+
+    /* updateTrains(compliments)
+     * Requests new data from wmata
+     * Calls processTrains on succesfull response.
+     */
+    updateTrains: function() {
+        Log.log("[dcmetro] updateTrains");
+		// 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
+
+		var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + "/" + this.config.myStationCode + this.getQuerystring();
+		var self = this;
+		var retry = true;
+
+        self.authorized = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 10000;
+        xhr.onreadystatechange = function(e){
+            //console.log("readyState = " + xhr.readyState);
+            if (xhr.readyState === 4){
+                if (xhr.status === 200){
+                    //console.log(xhr.response);
+                    self.processTrains(JSON.parse(xhr.response));
+                } else if (xhr.status === 401) { //unauthorized
+                    self.updateDom(self.config.animationSpeed);
+
+                    Log.error(self.name + ": Incorrect API Key.");
+                    retry = true;
+                    self.authorized = false;
+                } else {
+                    console.error("XHR failed: ", xhr.status);
+                }
+            }
+        };
+        xhr.ontimeout = function (){
+            console.error("request timedout: ", xhr);
+        };
+        xhr.open("get", url, /*async*/ true);
+        // xhr.responseType = "text";
+        xhr.send();
+
+    },
+    
+    /* processTrains(data)
+	 * Uses the received data to set the various values.
+	 *
+	 * argument data object - Train information received form WMATA
+	 */
+	processTrains: function(data) {
+		Log.log("[dcmetro] processTrains");
+
+		if (!data && !data.Trains) {
+			console.log("processTrains: Did not receive usable new data.");
+			return;
+		}
+		
+		for (var i=0; i < data.Trains.length; i++) {
+			this.trains.push(data.Trains[i]);
+		}
+
+        this.show(this.config.animationSpeed, {lockString:this.identifier});
+        this.loaded = true;
+        this.updateDom(this.config.animationSpeed);
+	},
+
+    processStation: function (data) {
+        Log.log("[dcmetro] processStation");
+        if (!data) {
+            console.log("processStation: Did not receive usable new data.");
+            return;
+        }
+
+        this.stationName = data.Name;
+        this.updateDom(this.config.animationSpeed);
     },
 
     // Override notification handler.
@@ -103,67 +261,41 @@ Module.register("dcmetro",{
                 this.hide(0, {lockString: this.identifier});
             }
         }
-        if (notification === "CALENDAR_EVENTS") {
-            var senderClasses = sender.data.classes.toLowerCase().split(" ");
-            if (senderClasses.indexOf(this.config.calendarClass.toLowerCase()) !== -1) {
-                var lastEvent =  this.firstEvent;
-                this.firstEvent = false;
-
-                for (e in payload) {
-                    var event = payload[e];
-                    if (event.location || event.geo) {
-                        this.firstEvent = event;
-                        //Log.log("First upcoming event with location: ", event);
-                        break;
-                    }
-                }
-            }
-        }
     },
-
-    /* updateTrains(compliments)
-     * Requests new data from wmata
-     * Calls processTrains on succesfull response.
-     */
-    updateTrains: function() {
-        if (this.config.appid === "") {
-            Log.error("DCMetro: APPID not set!");
-            return;
-        }
-
-        // TODO
-    },
-
-    /* getParams(compliments)
+    
+    /* getQuerystring(compliments)
      * Generates an url with api parameters based on the config.
      *
      * return String - URL params.
      */
-    getParams: function() {
+    getQuerystring: function() {
         var params = "?";
-        if(this.config.locationID) {
-            params += "id=" + this.config.locationID;
-        } else if(this.config.location) {
-            params += "q=" + this.config.location;
-        } else if (this.firstEvent && this.firstEvent.geo) {
-            params += "lat=" + this.firstEvent.geo.lat + "&lon=" + this.firstEvent.geo.lon
-        } else if (this.firstEvent && this.firstEvent.location) {
-            params += "q=" + this.firstEvent.location;
+        if(this.config.apiKey) {
+            params += "api_key=" + this.config.apiKey;
         } else {
             this.hide(this.config.animationSpeed, {lockString:this.identifier});
             return;
         }
 
-        params += "&units=" + this.config.units;
-        params += "&lang=" + this.config.lang;
-        /*
-         * Submit a specific number of days to forecast, between 1 to 16 days.
-         * The OpenWeatherMap API properly handles values outside of the 1 - 16 range and returns 7 days by default.
-         * This is simply being pedantic and doing it ourselves.
-         */
-        params += "&cnt=" + (((this.config.maxNumberOfDays < 1) || (this.config.maxNumberOfDays > 16)) ? 7 : this.config.maxNumberOfDays);
-        params += "&APPID=" + this.config.appid;
-
         return params;
+    },
+
+    /* scheduleUpdate()
+     * Schedule next update.
+     *
+     * argument delay number - Milliseconds before next update. If empty, this.config.updateInterval is used.
+     */
+    scheduleUpdate: function(delay) {
+        var nextLoad = this.config.updateInterval;
+        if (typeof delay !== "undefined" && delay >= 0) {
+            nextLoad = delay;
+        }
+
+        var self = this;
+        clearTimeout(this.updateTimer);
+        this.updateTimer = setTimeout(function() {
+            self.getStationInfo();
+            self.updateTrains();
+        }, nextLoad);
     }
 });
