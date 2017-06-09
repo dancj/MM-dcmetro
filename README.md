@@ -37,11 +37,10 @@ The following properties can be configured:
 	<tbody>
 		<tr>
 			<td><code>myLocationID</code></td>
-			<td>The location ID used for upcoming metro times.<br>
+			<td>
+				The location ID used for upcoming metro times.<br>
 				<br><b>Example:</b> <code>'A01'</code>
-
 				<br/>
-
 				<strong>Note: See WMATA documentation for list of stations IDs, or Station List below</strong>
 			</td>
 		</tr>
