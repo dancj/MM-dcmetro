@@ -1,4 +1,4 @@
-# Module: DC Metro
+    # Module: DC Metro
 The `dc metro` module is a custom module to extend MagicMirror.
 This module displays the upcoming trains for a pre-configured DC metro station.
 
@@ -27,7 +27,6 @@ The following properties can be configured:
 
 
 <table width="100%">
-	<!-- why, markdown... -->
 	<thead>
 		<tr>
 			<th>Option</th>
@@ -37,9 +36,8 @@ The following properties can be configured:
 	<tbody>
 		<tr>
 			<td><code>myLocationID</code></td>
-			<td>The location ID used for upcoming metro times.<br>
+			<td>The location ID used for upcoming metro times.
 				<br><b>Example:</b> <code>'A01'</code>
-				<br><b>Default value:</b> <code>false</code><br><br>
 				<strong>Note: See WMATA documentation for list of stations IDs</strong> 
 			</td>
 		</tr>
@@ -106,7 +104,7 @@ The following properties can be configured:
 
 ````javascript
 {
-  
+
   "Stations": [
     {
       "Code": "A01",

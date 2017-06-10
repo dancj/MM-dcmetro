@@ -15,26 +15,27 @@ Module.register("dcmetro",{
         location: false,
         locationID: false,
         fade: true,
-        fadePoint: 0.25, // Start on 1/4th of the list.
+        fadePoint: 0.7,
 
         initialLoadDelay: 2500, // 2.5 seconds delay.
-        updateInterval: 10 * 60 * 1000, // every 10 minutes
+        updateInterval: 1 * 60 * 1000, // every X minutes
         retryDelay: 2500,
 
         apiBase: "https://api.wmata.com",
-        TrainPredictionEndpoint: "StationPrediction.svc/json/GetPrediction/",
+        TrainPredictionEndpoint: "StationPrediction.svc/json/GetPrediction",
+        StationInfoEndpoint: "Rail.svc/json/jStationInfo",
 
         appendLocationNameToHeader: true,
         
         lineColors: {
         	"RD": "#FF0000",
-        	"BL": "#00FF00",
+        	"BL": "#0000FF",
         	"YL": "#FFFF00",
         	"OR": "#FFA500",
-        	"GR": "#0000FF",
+        	"GR": "#006400",
         	"SV": "#C0C0C0"
         },
-        defaultColor: "#FFFFFF"
+        defaultColor: "#000000"
 
     },
 
@@ -64,6 +65,7 @@ Module.register("dcmetro",{
         moment.locale(config.language);
 
         this.trains = [];
+        this.getStationInfo();
 
         this.loaded = false;
         this.scheduleUpdate(this.config.initialLoadDelay);
@@ -71,6 +73,7 @@ Module.register("dcmetro",{
 
     // Override dom generator.
     getDom: function() {
+        var self = this;
         var wrapper = document.createElement("div");
 
         if (!this.loaded) {
@@ -93,6 +96,11 @@ Module.register("dcmetro",{
         var table = document.createElement("table");
         table.className = "small";
 
+        var updateTimeRow = document.createElement("tr");
+        updateTimeRow.className = "update-time";
+        updateTimeRow.innerHTML = "<td>Last Update: " + new Date().toLocaleTimeString() + "</td>";
+        table.appendChild(updateTimeRow);
+
         for (var t in this.trains) {
             var train = this.trains[t];
 
@@ -107,11 +115,11 @@ Module.register("dcmetro",{
             var blockColor = this.config.lineColors[train.Line] || this.config.defaultColor;
             var departureTimeCell = document.createElement("td");
             departureTimeCell.className = "lineColor";
-            departureTimeCell.innerHTML = "<p style='background:" + blockColor + "'></p>";
+            departureTimeCell.innerHTML = "<p style='background:" + blockColor + "'>" + train.Line   + "</p>";
             row.appendChild(departureTimeCell);
 
             var MinutesAwayCell = document.createElement("td");
-            MinutesAwayCell.innerHTML = " " + train.Min + " min";
+            MinutesAwayCell.innerHTML = " " + train.Min + (self.isNumeric(train.Min) ? " min" : "");
             MinutesAwayCell.className = "align-right minutes";
             row.appendChild(MinutesAwayCell);
 
@@ -134,10 +142,47 @@ Module.register("dcmetro",{
     // Override getHeader method.
     getHeader: function() {
         if (this.config.appendLocationNameToHeader) {
-            return this.data.header + " " + this.fetchedLocatioName;
+            return this.stationName || this.data.header;
         }
 
         return this.data.header;
+    },
+
+    getStationInfo: function () {
+        Log.log("[dcmetro] getStationInfo");
+        // https://api.wmata.com/Rail.svc/json/jStationInfo[?StationCode]
+
+        var url = this.config.apiBase + "/" + this.config.StationInfoEndpoint + this.getQuerystring() + "&StationCode=" + this.config.myStationCode;
+        var self = this;
+        var retry = true;
+
+        self.authorized = true;
+
+        var xhr = new XMLHttpRequest();
+        xhr.timeout = 10000;
+        xhr.onreadystatechange = function(e){
+            //console.log("readyState = " + xhr.readyState);
+            if (xhr.readyState === 4){
+                if (xhr.status === 200){
+                    //console.log(xhr.response);
+                    self.processStation(JSON.parse(xhr.response));
+                } else if (xhr.status === 401) { //unauthorized
+                    self.updateDom(self.config.animationSpeed);
+
+                    Log.error(self.name + ": Incorrect API Key.");
+                    retry = true;
+                    self.authorized = false;
+                } else {
+                    console.error("XHR failed: ", xhr.status);
+                }
+            }
+        };
+        xhr.ontimeout = function (){
+            console.error("request timedout: ", xhr);
+        };
+        xhr.open("get", url, /*async*/ true);
+        // xhr.responseType = "text";
+        xhr.send();
     },
 
     /* updateTrains(compliments)
@@ -148,7 +193,7 @@ Module.register("dcmetro",{
         Log.log("[dcmetro] updateTrains");
 		// 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
 
-		var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + this.config.myStationCode + "/" + this.getQuerystring();
+		var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + "/" + this.config.myStationCode + this.getQuerystring();
 		var self = this;
 		var retry = true;
 
@@ -171,6 +216,10 @@ Module.register("dcmetro",{
                 } else {
                     console.error("XHR failed: ", xhr.status);
                 }
+
+                if (retry) {
+                    self.scheduleUpdate((self.loaded) ? -1 : self.config.retryDelay);
+                }
             }
         };
         xhr.ontimeout = function (){
@@ -188,13 +237,14 @@ Module.register("dcmetro",{
 	 * argument data object - Train information received form WMATA
 	 */
 	processTrains: function(data) {
-		Log.log("[dcmetro] processTrains");
+//		Log.log("[dcmetro] processTrains");
 
 		if (!data && !data.Trains) {
 			console.log("processTrains: Did not receive usable new data.");
 			return;
 		}
-		
+
+		this.trains = [];
 		for (var i=0; i < data.Trains.length; i++) {
 			this.trains.push(data.Trains[i]);
 		}
@@ -203,6 +253,16 @@ Module.register("dcmetro",{
         this.loaded = true;
         this.updateDom(this.config.animationSpeed);
 	},
+
+    processStation: function (data) {
+        if (!data) {
+            console.log("processStation: Did not receive usable new data.");
+            return;
+        }
+
+        this.stationName = data.Name;
+        Log.log("[dcmetro] processStation set to: " + this.stationName);
+    },
 
     // Override notification handler.
     notificationReceived: function(notification, payload, sender) {
@@ -246,5 +306,9 @@ Module.register("dcmetro",{
         this.updateTimer = setTimeout(function() {
             self.updateTrains();
         }, nextLoad);
+    },
+
+    isNumeric: function (n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
     }
 });
