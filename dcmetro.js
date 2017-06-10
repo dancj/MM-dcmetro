@@ -26,14 +26,14 @@ Module.register("dcmetro",{
         StationInfoEndpoint: "Rail.svc/json/jStationInfo",
 
         appendLocationNameToHeader: true,
-        
+
         lineColors: {
-        	"RD": "#FF0000",
-        	"BL": "#0000FF",
-        	"YL": "#FFFF00",
-        	"OR": "#FFA500",
-        	"GR": "#006400",
-        	"SV": "#C0C0C0"
+            "RD": "#FF0000",
+            "BL": "#0000FF",
+            "YL": "#FFFF00",
+            "OR": "#FFA500",
+            "GR": "#006400",
+            "SV": "#C0C0C0"
         },
         defaultColor: "#000000"
 
@@ -191,7 +191,7 @@ Module.register("dcmetro",{
      */
     updateTrains: function() {
         Log.log("[dcmetro] updateTrains");
-		// 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
+        // 	https://api.wmata.com/StationPrediction.svc/json/GetPrediction/{StationCodes}
 
 		var url = this.config.apiBase + "/" + this.config.TrainPredictionEndpoint + "/" + this.config.myStationCode + this.getQuerystring();
 		var self = this;
@@ -230,7 +230,7 @@ Module.register("dcmetro",{
         xhr.send();
 
     },
-    
+
     /* processTrains(data)
 	 * Uses the received data to set the various values.
 	 *
@@ -252,7 +252,17 @@ Module.register("dcmetro",{
         this.show(this.config.animationSpeed, {lockString:this.identifier});
         this.loaded = true;
         this.updateDom(this.config.animationSpeed);
-	},
+    },
+
+    processStation: function (data) {
+        if (!data) {
+            console.log("processStation: Did not receive usable new data.");
+            return;
+        }
+
+        this.stationName = data.Name;
+        Log.log("[dcmetro] processStation set to: " + this.stationName);
+    },
 
     processStation: function (data) {
         if (!data) {
@@ -272,7 +282,7 @@ Module.register("dcmetro",{
             }
         }
     },
-    
+
     /* getQuerystring(compliments)
      * Generates an url with api parameters based on the config.
      *
