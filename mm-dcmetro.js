@@ -8,7 +8,7 @@
  * MIT Licensed.
  */
 
-Module.register("dcmetro",{
+Module.register("MM-dcmetro",{
 
     // Default module config.
     defaults: {
@@ -49,7 +49,7 @@ Module.register("dcmetro",{
 
     // Define required scripts.
     getStyles: function() {
-        return ["dcmetro.css", "font-awesome.css"];
+        return ["MM-dcmetro.css", "font-awesome.css"];
     },
 
     // Define required translations.
