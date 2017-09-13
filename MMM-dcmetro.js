@@ -8,7 +8,7 @@
  * MIT Licensed.
  */
 
-Module.register("MM-dcmetro",{
+Module.register("MMM-dcmetro",{
 
     // Default module config.
     defaults: {

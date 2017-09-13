@@ -1,5 +1,5 @@
-    # Module: DC Metro
-The `dc metro` module is a custom module to extend MagicMirror.
+## MMM-dcmetro
+This unofficial `dc metro` module is a custom module to extend MagicMirror.
 This module displays the upcoming trains for a pre-configured DC metro station.
 
 ## Using the module
@@ -8,7 +8,7 @@ To use this module, add it to the modules array in the `config/config.js` file:
 ````javascript
 modules: [
 	{
-		module: 'mm-dcmetro',
+		module: 'MMM-dcmetro',
 		position: 'top_right',	// This can be any of the regions.
 									// Best results in left or right regions.
 
