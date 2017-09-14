@@ -1,6 +1,6 @@
 ## MMM-dcmetro
-This unofficial `dc metro` module is a custom module to extend MagicMirror.
-This module displays the upcoming trains for a pre-configured DC metro station.
+This unofficial Washington DC Metro module is a custom module to extend MagicMirror.
+This module displays the upcoming trains for a pre-configured DC metro station using data retrieved from the WMATA API.
 
 ## Using the module
 
