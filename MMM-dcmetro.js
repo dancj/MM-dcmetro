@@ -49,7 +49,7 @@ Module.register("MMM-dcmetro",{
 
     // Define required scripts.
     getStyles: function() {
-        return ["MM-dcmetro.css", "font-awesome.css"];
+        return ["MMM-dcmetro.css", "font-awesome.css"];
     },
 
     // Define required translations.
